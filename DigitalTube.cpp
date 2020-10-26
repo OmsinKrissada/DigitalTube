@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include "DigitalTube.h"
 
+#include <string.h>
+
 #if defined(ESP8266)
 os_timer_t __TudeTimer;
 #elif defined(ESP32)
@@ -60,25 +62,32 @@ void DigitalTube::begin() {
 #endif // ESP8266 or ESP32
 }
 
-void DigitalTube::show(char digiOne, char digiTwo, char digiTree, char digiFour) {
-	_DigiTubeConfig.disp[0] = digiFour;
-	_DigiTubeConfig.disp[1] = digiTree;
-	_DigiTubeConfig.disp[2] = digiTwo;
-	_DigiTubeConfig.disp[3] = digiOne;
+void DigitalTube::print(char* text) {
 
-	for (int i=0;i<8;i++) {
-		char val = _DigiTubeConfig.disp[i];
-		if((val >= 32)&&(val <= 47)) val = (val == 45) ? 72 : 73;
+//	strrev(text);
+
+	short n_digit = 0;
+	for (int i=0; i<strlen(text) && (n_digit<4 ? true : text[i]=='.') ; i++) {
+		char val = text[i];
+		if (val == '.'){
+			if(i == 7) val = 74;
+			else {
+				_DigiTubeConfig.disp[(3-n_digit)+1] += 10;
+			}
+		}
+		else if((val >= 32)&&(val <= 47)) val = (val == 45) ? 72 : 73;
 		else if((val >= '0')&&(val <= '9')) val -= 48;
 		else if((val >= 'A')&&(val <= 'Z')) val -= 45;
 		else if((val >= 'a')&&(val <= 'z')) val -= 51;
     
-		_DigiTubeConfig.disp[i] = val;
+    	if (*(text+i) != '.') _DigiTubeConfig.disp[3-(n_digit++)] = val;
 	}
+//	strrev(text);
 }
 
-void DigitalTube::print(int number) {
-	show((number/1000)%10, (number/100)%10, (number/10)%10, number%10);
+void DigitalTube::print(double number) {
+	char char_array[5] = {int(number/10)%100+'0', int(number)%10+'0', '.', int(number*10)%10+'0', int(number*100)%10+'0' };
+	print(char_array);
 }
 
 #endif
